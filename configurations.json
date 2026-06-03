@@ -1,0 +1,401 @@
+{
+  "configurations": [
+    {
+      "name": "LWE.FMS.2020 (Engine-Upper and LMB override status)",
+      "info_pdf": "config/docs/FMS_Liebherr.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x18F00401",
+          "match_type": "range",
+          "protocol": "j1939",
+          "byte_index": 4,
+          "min_value": "0x06",
+          "max_value": "0xFF"
+        },
+        {
+          "name": "Crane-Upper running",
+          "can_id": "0x18FFE001",
+          "protocol": "j1939",
+          "match_type": "bit",
+          "byte_index": 0,
+          "bit_index": 0,
+          "bit_value": 1
+        },
+        {
+          "name": "LMB override",
+          "can_id": "0x18FFE001",
+          "protocol": "j1939",
+          "match_type": "bit",
+          "byte_index": 2,
+          "bit_index": 1,
+          "bit_value": 1
+        }
+      ],
+      "pgn_channels": [
+        {
+          "label": "Engine RPM",
+          "pgn": "0xF004",
+          "bytes": [3, 4],
+          "byte_order": "little_endian",
+          "scale": 0.125,
+          "offset": 0.0,
+          "unit": "rpm",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Oil pressure",
+          "pgn": "0xFEEF",
+          "bytes": [3],
+          "byte_order": "little_endian",
+          "scale": 0.04,
+          "offset": 0,
+          "unit": "Bar",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Coolant temp",
+          "pgn": "0xFEEE",
+          "bytes": [0],
+          "byte_order": "little_endian",
+          "scale": 1,
+          "offset": -40,
+          "unit": "°C",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Oil temp",
+          "pgn": "0xFEEE",
+          "bytes": [2,3],
+          "byte_order": "little_endian",
+          "scale": 0.03125,
+          "offset": -273,
+          "unit": "°C",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Fuel temp",
+          "pgn": "0xFEEE",
+          "bytes": [1],
+          "byte_order": "little_endian",
+          "scale": 1,
+          "offset": -40,
+          "unit": "°C",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Coolant level",
+          "pgn": "0xFEEF",
+          "bytes": [7],
+          "byte_order": "little_endian",
+          "scale": 0.4,
+          "offset": 0,
+          "unit": "%",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Total hours",
+          "pgn": "0xFEE5",
+          "bytes": [0,1,2,3],
+          "byte_order": "little_endian",
+          "scale": 0.05,
+          "offset": 0,
+          "unit": "h",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Total HR fuel used",
+          "pgn": "0xFD09",
+          "bytes": [4,5,6,7],
+          "byte_order": "little_endian",
+          "scale": 0.001,
+          "offset": 0,
+          "unit": "l",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Total fuel used",
+          "pgn": "0xFEE9",
+          "bytes": [4,5,6,7],
+          "byte_order": "little_endian",
+          "scale": 0.5,
+          "offset": 0,
+          "unit": "l",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Fuel Rate",
+          "pgn": "0xFEF2",
+          "bytes": [0,1],
+          "byte_order": "little_endian",
+          "scale": 0.05,
+          "offset": 0,
+          "unit": "l/h",
+          "format": "{:.2f}"
+        }
+      ],
+      "dm1_enabled": true 
+    },
+    {
+      "name": "Demag_2012_Std J1939(Double engine crane_Engine 1 status)",
+      "info_pdf": "config/docs/AC3.055_J1939.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x18F00401",
+          "match_type": "range",
+          "protocol": "j1939",
+          "byte_index": 4,
+          "min_value": "0x06",
+          "max_value": "0xFF"
+        }
+      ],
+      "pgn_channels": [
+        {
+          "label": "Engine RPM",
+          "pgn": "0xF004",
+          "bytes": [3, 4],
+          "byte_order": "little_endian",
+          "scale": 0.125,
+          "offset": 0.0,
+          "unit": "rpm",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Oil pressure",
+          "pgn": "0xFEEF",
+          "bytes": [3],
+          "byte_order": "little_endian",
+          "scale": 0.04,
+          "offset": 0,
+          "unit": "Bar",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Coolant temp",
+          "pgn": "0xFEEE",
+          "bytes": [0],
+          "byte_order": "little_endian",
+          "scale": 1,
+          "offset": -40,
+          "unit": "°C",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Oil temp",
+          "pgn": "0xFEEE",
+          "bytes": [2,3],
+          "byte_order": "little_endian",
+          "scale": 0.03125,
+          "offset": -273,
+          "unit": "°C",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Fuel temp",
+          "pgn": "0xFEEE",
+          "bytes": [1],
+          "byte_order": "little_endian",
+          "scale": 1,
+          "offset": -40,
+          "unit": "°C",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Coolant level",
+          "pgn": "0xFEEF",
+          "bytes": [7],
+          "byte_order": "little_endian",
+          "scale": 0.4,
+          "offset": 0,
+          "unit": "%",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Total hours",
+          "pgn": "0xFEE5",
+          "bytes": [0,1,2,3],
+          "byte_order": "little_endian",
+          "scale": 0.05,
+          "offset": 0,
+          "unit": "h",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Total HR fuel used",
+          "pgn": "0xFD09",
+          "bytes": [4,5,6,7],
+          "byte_order": "little_endian",
+          "scale": 0.001,
+          "offset": 0,
+          "unit": "l",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Total fuel used",
+          "pgn": "0xFEE9",
+          "bytes": [4,5,6,7],
+          "byte_order": "little_endian",
+          "scale": 0.5,
+          "offset": 0,
+          "unit": "l",
+          "format": "{:.2f}"
+        },
+        {
+          "label": "Engine Fuel Rate",
+          "pgn": "0xFEF2",
+          "bytes": [0,1],
+          "byte_order": "little_endian",
+          "scale": 0.05,
+          "offset": 0,
+          "unit": "l/h",
+          "format": "{:.2f}"
+        }
+      ],
+      "dm1_enabled": true  
+    },
+    {
+      "name": "Equipment<2014(Double engine crane_Engine 1 status)",
+      "info_pdf": "config/docs/AC3.055_J1939.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x250",
+          "match_type": "range",
+          "byte_index": 7,
+          "min_value": "0x0E",
+          "max_value": "0xFF"
+        }
+      ]
+    },
+    {
+      "name": "Tadano_2020 (Engine + Upper status)",
+      "info_pdf": "config/docs/AC3.055_J1939.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x18F00401",
+          "match_type": "range",
+          "protocol": "j1939",
+          "byte_index": 4,
+          "min_value": "0x06",
+          "max_value": "0xFF"
+        },
+        {
+          "name": "PTO engage_Crane side running",
+          "can_id": "0x18FDA427",
+          "match_type": "bit",
+          "byte_index": 0,
+          "bit_index": 6,
+          "bit_value": 1
+        }
+      ] 
+    },
+    {
+      "name": "Tadano_2018_SCANIA (Engine + Upper status)",
+      "info_pdf": "config/docs/AC3.055_J1939.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x18F00401",
+          "match_type": "range",
+          "protocol": "j1939",
+          "byte_index": 4,
+          "min_value": "0x06",
+          "max_value": "0xFF"
+        },
+        {
+          "name": "PTO engage_Crane side running",
+          "can_id": "0x18FFD131",
+          "match_type": "bit",
+          "byte_index": 4,
+          "bit_index": 2,
+          "bit_value": 1
+        }
+      ]
+    },
+    {
+      "name": "GMK_CCS_2022 (Engine + upper status)",
+      "info_pdf": "config/docs/Grove_CCS_Power board can connection.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x18F00401",
+          "match_type": "range",
+          "protocol": "j1939",
+          "byte_index": 4,
+          "min_value": "0x06",
+          "max_value": "0xFF"
+        },
+        {
+          "name": "PTO engage_Crane side running",
+          "can_id": "0x18FDA427",
+          "match_type": "bit",
+          "byte_index": 0,
+          "bit_index": 6,
+          "bit_value": 1
+        }
+      ]
+    },
+    {
+      "name": "GMK_CCS_2018 (Engine + upper status)",
+      "info_pdf": "config/docs/Grove_CCS_2018_LMB+Engine.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x18F00401",
+          "match_type": "range",
+          "protocol": "j1939",
+          "byte_index": 4,
+          "min_value": "0x06",
+          "max_value": "0xFF"
+        },
+        {
+          "name": "PTO engage_Crane side running",
+          "can_id": "0x0CF00203",
+          "match_type": "bit",
+          "byte_index": 0,
+          "bit_index": 0,
+          "bit_value": 1
+        }
+      ]
+    },
+    {
+      "name": "GMK_ECOS_2006_Ex. GMK4080-1 (Engine + upper status)",
+      "info_pdf": "config/docs/Grove_ECOS_ADM2_Engine+PTO.pdf",
+      "signals": [
+        {
+          "name": "Engine On_RPM<200",
+          "can_id": "0x18F00401",
+          "match_type": "range",
+          "protocol": "j1939",
+          "byte_index": 4,
+          "min_value": "0x06",
+          "max_value": "0xFF"
+        },
+        {
+          "name": "PTO engage_Crane side running",
+          "can_id": "0x18FEF100",
+          "match_type": "bit",
+          "byte_index": 3,
+          "bit_index": 4,
+          "bit_value": 1
+        }
+      ]
+    },
+    {
+      "name": "GMK_CCS_2018 to 2025 (LMB override status)",
+      "info_pdf": "config/docs/Grove_CCS_Power board can connection.pdf",
+      "signals": [
+        {
+          "name": "LMB override",
+          "can_id": "0x182",
+          "match_type": "bit",
+          "byte_index": 7,
+          "bit_index": 5,
+          "bit_value": 1
+        }
+      ]
+    }
+  ]
+}
