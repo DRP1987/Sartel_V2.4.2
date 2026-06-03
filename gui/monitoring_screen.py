@@ -862,8 +862,8 @@ class MonitoringScreen(QWidget):
         query = text.strip().lower()
         for can_id, data in self.active_can_ids.items():
             checkbox = data['checkbox']
-            # Match against formatted hex string, e.g. "0x1a3"
-            visible = not query or query in f"0x{can_id:03x}"
+            # Compare against the same format shown in the UI (e.g. "0x1A3" → "0x1a3")
+            visible = not query or query in f"0x{can_id:03X}".lower()
             checkbox.setVisible(visible)
 
     def _on_header_clicked(self, column: int):
@@ -1258,6 +1258,8 @@ class MonitoringScreen(QWidget):
             # Use the first message timestamp as the log epoch
             start_time = self.log_buffer[0]['timestamp']
 
+            # utf-8 (no BOM) is required for SavvyCAN compatibility;
+            # a BOM would corrupt the first column header during import.
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
                 # SavvyCAN format header
