@@ -3,7 +3,7 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QTextEdit,
                              QScrollArea, QPushButton, QHBoxLayout, QLabel,
                              QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog,
-                             QSplitter, QCheckBox, QMessageBox)
+                             QSplitter, QCheckBox, QMessageBox, QLineEdit)
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer
 from PyQt5.QtGui import QTextCursor
 from datetime import datetime
@@ -73,6 +73,9 @@ class MonitoringScreen(QWidget):
         # Override mode tracking
         self.override_mode = False  # False = Append mode, True = Override mode
         self.override_row_map: Dict[int, int] = {}  # {can_id: row_index} for override mode
+
+        # CAN ID column sort state (True = ascending, False = descending)
+        self._sort_ascending = True
 
         # PGN live data decoder (None if config has no pgn_channels)
         self.pgn_decoder: Optional[PGNDecoder] = None
@@ -572,7 +575,7 @@ class MonitoringScreen(QWidget):
 
 
     def _create_filter_panel(self) -> QWidget:
-        """Create CAN ID filter panel with checkboxes."""
+        """Create CAN ID filter panel with search bar and checkboxes."""
         panel = QWidget()
         layout = QVBoxLayout()
         
@@ -580,6 +583,13 @@ class MonitoringScreen(QWidget):
         title = QLabel("CAN ID Filter")
         title.setStyleSheet("font-weight: bold; font-size: 12px;")
         layout.addWidget(title)
+
+        # Search bar above checkboxes
+        self.filter_search_box = QLineEdit()
+        self.filter_search_box.setPlaceholderText("Search CAN ID…")
+        self.filter_search_box.setClearButtonEnabled(True)
+        self.filter_search_box.textChanged.connect(self._on_filter_search_changed)
+        layout.addWidget(self.filter_search_box)
         
         # Scrollable area for checkboxes
         scroll_area = QScrollArea()
@@ -633,6 +643,11 @@ class MonitoringScreen(QWidget):
         header.setSectionResizeMode(1, QHeaderView.Stretch)            # Data
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Timestamp
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Cycle Time
+
+        # Allow clicking CAN ID column header to sort
+        header.setSortIndicatorShown(True)
+        header.setSortIndicator(0, Qt.AscendingOrder)
+        header.sectionClicked.connect(self._on_header_clicked)
         
         layout.addWidget(self.log_table)
         panel.setLayout(layout)
@@ -836,6 +851,93 @@ class MonitoringScreen(QWidget):
         """Uncheck all CAN ID filter checkboxes."""
         for can_id, data in self.active_can_ids.items():
             data['checkbox'].setChecked(False)
+
+    def _on_filter_search_changed(self, text: str):
+        """
+        Show only filter checkboxes whose CAN ID contains the search text.
+
+        Args:
+            text: Current text in the search box
+        """
+        query = text.strip().lower()
+        for can_id, data in self.active_can_ids.items():
+            checkbox = data['checkbox']
+            # Compare against the same format shown in the UI (e.g. "0x1A3" → "0x1a3")
+            visible = not query or query in f"0x{can_id:03X}".lower()
+            checkbox.setVisible(visible)
+
+    def _on_header_clicked(self, column: int):
+        """
+        Sort the CAN Bus Log table by CAN ID when column 0 header is clicked.
+
+        Repeated clicks toggle between ascending and descending order.
+
+        Args:
+            column: Index of the clicked header section
+        """
+        if column != 0:
+            return
+
+        self._sort_ascending = not self._sort_ascending
+        self._sort_by_can_id(self._sort_ascending)
+
+    def _sort_by_can_id(self, ascending: bool):
+        """
+        Sort visible table rows by CAN ID value.
+
+        Rebuilds override_row_map when in override mode so subsequent
+        real-time updates target the correct rows.
+
+        Args:
+            ascending: True for ascending order, False for descending
+        """
+        self.log_table.blockSignals(True)
+        try:
+            # Collect every row as a plain tuple of strings
+            rows = []
+            for i in range(self.log_table.rowCount()):
+                row_data = tuple(
+                    self.log_table.item(i, col).text()
+                    if self.log_table.item(i, col) else ""
+                    for col in range(self.log_table.columnCount())
+                )
+                rows.append(row_data)
+
+            # Sort by numeric CAN ID value (column 0 is e.g. "0x1A3")
+            def _can_id_key(row_tuple):
+                try:
+                    return int(row_tuple[0], 16)
+                except (ValueError, TypeError):
+                    return 0
+
+            rows.sort(key=_can_id_key, reverse=not ascending)
+
+            # Rewrite table with sorted rows
+            self.log_table.setRowCount(0)
+            for row_data in rows:
+                row_idx = self.log_table.rowCount()
+                self.log_table.insertRow(row_idx)
+                for col, cell_text in enumerate(row_data):
+                    self.log_table.setItem(row_idx, col, QTableWidgetItem(cell_text))
+
+            # Keep override_row_map consistent with new row positions
+            if self.override_mode:
+                self.override_row_map.clear()
+                for i in range(self.log_table.rowCount()):
+                    item = self.log_table.item(i, 0)
+                    if item:
+                        try:
+                            can_id = int(item.text(), 16)
+                            self.override_row_map[can_id] = i
+                        except (ValueError, TypeError):
+                            pass
+
+            # Update sort indicator arrow
+            header = self.log_table.horizontalHeader()
+            header.setSortIndicator(0, Qt.AscendingOrder if ascending else Qt.DescendingOrder)
+
+        finally:
+            self.log_table.blockSignals(False)
 
     def _connect_to_can(self):
         """Connect to CAN bus and start receiving (if connected)."""
@@ -1133,7 +1235,7 @@ class MonitoringScreen(QWidget):
         self._save_log_to_csv()
     
     def _save_log_to_csv(self):
-        """Save logged messages to CSV file."""
+        """Save logged messages to CSV file in SavvyCAN-compatible format."""
         from PyQt5.QtWidgets import QMessageBox
         
         if not self.log_buffer:
@@ -1153,23 +1255,44 @@ class MonitoringScreen(QWidget):
             return
         
         try:
-            with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
+            # Use the first message timestamp as the log epoch
+            start_time = self.log_buffer[0]['timestamp']
+
+            # utf-8 (no BOM) is required for SavvyCAN compatibility;
+            # a BOM would corrupt the first column header during import.
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
-                # Write header with Date and Time as separate columns
-                writer.writerow(['Date', 'Time', 'CAN ID', 'Data', 'Cycle Time (ms)'])
-                
-                # Write all logged messages in chronological order
+                # SavvyCAN format header
+                writer.writerow([
+                    'Time Stamp', 'ID', 'Extended', 'Dir', 'Bus', 'LEN',
+                    'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'
+                ])
+
                 for msg_data in self.log_buffer:
-                    # Split timestamp into date and time
-                    date_str = msg_data['timestamp'].strftime("%Y-%m-%d")
-                    time_str = msg_data['timestamp'].strftime("%H:%M:%S.%f")[:-3]
-                    can_id_str = f"0x{msg_data['can_id']:03X}"
-                    data_str = " ".join(f"{b:02X}" for b in msg_data['data'])
-                    
-                    cycle_time = msg_data.get('cycle_time')
-                    cycle_time_str = f"{cycle_time:.1f}" if cycle_time is not None else ""
-                    
-                    writer.writerow([date_str, time_str, can_id_str, data_str, cycle_time_str])
+                    # Elapsed time in microseconds from the first logged message
+                    delta_us = int(
+                        (msg_data['timestamp'] - start_time).total_seconds() * 1_000_000
+                    )
+
+                    can_id = msg_data['can_id']
+                    # Extended frame if CAN ID exceeds 11-bit standard range
+                    is_extended = can_id > 0x7FF
+                    can_id_str = f"{can_id:X}"  # uppercase hex, no "0x" prefix
+
+                    data = msg_data['data']
+                    data_len = len(data)
+                    # Individual byte columns, empty string for unused slots
+                    byte_cols = [f"{b:02X}" for b in data] + [''] * (8 - data_len)
+
+                    writer.writerow([
+                        delta_us,
+                        can_id_str,
+                        'True' if is_extended else 'False',
+                        'Rx',
+                        '0',
+                        data_len,
+                        *byte_cols
+                    ])
             
             QMessageBox.information(
                 self, 
