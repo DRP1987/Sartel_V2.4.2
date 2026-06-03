@@ -1,0 +1,35 @@
+# Configuration 1 Documentation (Placeholder)
+
+This is a placeholder file for Configuration 1 documentation.
+
+## Overview
+Configuration 1 is designed for standard CAN monitoring with bit-level matching.
+
+## Signals
+
+### Signal 1
+- **CAN ID**: 0x119
+- **Match Type**: Bit matching
+- **Byte Index**: 3
+- **Bit Index**: 0
+- **Bit Value**: 1
+
+### Signal 2
+- **CAN ID**: 0x456
+- **Match Type**: Range matching
+- **Data Byte Index**: 0
+- **Min Value**: 0x0A
+- **Max Value**: 0x32
+
+### Signal 3 (with mask)
+- **CAN ID**: 0x123
+- **Match Type**: Exact matching
+- **Data**: [0x00, 0x00, 0x00, 0x29, 0x00, 0x00, 0x00, 0x00]
+- **Mask**: [0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00]
+
+## Usage
+This configuration is suitable for standard CAN bus monitoring scenarios where you need to detect specific bit patterns and value ranges.
+
+---
+
+**Note**: Replace this placeholder text file with an actual PDF document containing detailed configuration documentation. This file is provided as an example only.

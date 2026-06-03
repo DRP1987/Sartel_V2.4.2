@@ -1,0 +1,151 @@
+{
+  "current_version": "2.4.2",
+  "releases": [
+    {
+      "version": "1.0.0",
+      "date": "2024-12-22",
+      "title": "Initial Release_unsecured.",
+      "highlights": [
+        "PCAN USB device support.",
+        "Real-time CAN message monitoring.",
+        "Multiple configuration profiles.",
+        "PDF documentation viewer.",
+        "Auto baudrate detection."
+      ],
+      "features": [
+        "Connect to PCAN-USB devices.",
+        "Monitor CAN bus messages in real-time.",
+        "Filter messages by ID.",
+        "Export message logs.",
+        "Load custom configurations.",
+        "Operating signals status display.",
+        "Offline license activation."
+      ],
+      "bug_fixes": []
+    },
+    {
+      "version": "2.0.0",
+      "date": "2025-01-12",
+      "title": "Initial Release.",
+      "highlights": [
+        "PCAN USB device support.",
+        "Real-time CAN message monitoring.",
+        "Multiple configuration profiles.",
+        "PDF documentation viewer.",
+        "Auto baudrate detection."
+      ],
+      "features": [
+        "Connect to PCAN-USB devices.",
+        "Monitor CAN bus messages in real-time.",
+        "Filter messages by ID.",
+        "Export message logs.",
+        "Load custom configurations.",
+        "Operating signals status display.",
+        "Offline license activation."
+      ],
+      "bug_fixes": [
+        "Fixed bug which prevented app from starting without a valid Can connection."
+      ]
+    },
+    {
+      "version": "2.0.1",
+      "date": "2025-01-16",
+      "title": "Configurations added.",
+      "highlights": [
+        "Added: Demag_2012_Std J1939(Double engine crane_Engine 1 status)_Std PT comunication_Configuration only monitoring engine RPM's for double engine cranes with LMB on a normal digital.",
+        "Added: Equipment<2014(Double engine crane_Engine 1 status)_Old type crane which doesnt use std PT can comunication."
+      ],
+      "features": [
+        "Added single license activation for certain users."
+      ],
+      "bug_fixes": [
+      ]
+    },
+    {
+      "version": "2.0.2",
+      "date": "2025-01-23",
+      "title": "Offline mode added",
+      "highlights": [
+        "Added: Offline mode with acknowledge window. If no Pcan dongle connected to the PC, user will be able to review documentation and available configurations using the Offline mode."
+      ],
+      "bug_fixes": [
+        "Fixed Version discrepancy in between Current version release window and App status_bar label."
+      ]
+    },
+    {
+      "version": "2.0.3",
+      "date": "2025-01-26",
+      "title": "Offline mode added",
+      "highlights": [
+        "Added: Time based license added to all versions. GFS support @Sarens will provide license code upon request.",
+        "Added: Label on the screens showing the remaing time for the time base license."
+
+      ],
+      "bug_fixes": [
+        "Fixed spelling faults.",
+        "Fixed design bug which pushed progress bar out of center during Baudrate detecting."
+      ]
+    },
+    {
+      "version": "2.1.4",
+      "date": "2025-02-04",
+      "title": "Baudrate Listen Mode ONLY",
+      "highlights": [
+        "Added: Configuration GMK_ECOS_2006. Configuration based on GMK4080-1 K3559. Engine running and Crane mode ON taken via J1939 CanBus.",
+        "Added: Non Encrypted PDF will be used from the version.",
+        "Added: Background LISTEN mode ONLY for baudrate detection."
+
+      ],
+      "bug_fixes": [
+        "Bug fixed which created engine errors when scanning baudrates. The tool sent ACK messages to detect error frames on the bus response. This method made certain PT buses swichting to BUS off state, which was solved by powercycling the ignition."
+      ]
+    },
+    {
+      "version": "2.1.5",
+      "date": "2025-02-20",
+      "title": "Hardware Id",
+      "highlights": [
+        "Added: More friendly User interface for hardware ID. User can now copy his Hardware id and forward it to GFS mail boxes."
+      ],
+      "bug_fixes": [
+        "Bug fixed which generate different Hardware id's for the same pc"
+      ]
+    },
+    {
+      "version": "2.3.0",
+      "date": "2025-03-31",
+      "title": "Update function",
+      "highlights": [
+        "Added: User will get a pop up windown when there is an update available. The update will install the new version and replace the shortcut is available.",
+        "Added: ECOS cranes as from 2017 LMB signal",
+        "Added: Tadano cranes as from 2017 crane side - upper structure runing status."
+      ],
+      "bug_fixes": [
+        "Availble configurations clean up for easier user interface."
+      ]
+    },
+    {
+      "version": "2.4.1",
+      "date": "2025-04-02",
+      "title": "Live data on Engine configurations",
+      "highlights": [
+        "Added: When connected to a engine - powertrain, the user will be able to monitor certain live values on the 'Live data' tab.",
+        "Added: Data from RPM, Engine hours, Fuel used, oil pressure and Coolant temp."
+      ],
+      "bug_fixes": [
+        "Typo error which prevented the update to be completed."
+      ]
+    },
+    {
+      "version": "2.4.2",
+      "date": "2025-04-14",
+      "title": "Live data values added",
+      "highlights": [
+        "Added: Several J1939 parameters added on Liebherr cranes and general engine configurations."
+      ],
+      "bug_fixes": [
+        "Data conversion to STD EU units - Bar, degrees C, l/h -"
+      ]
+    }
+  ]
+}

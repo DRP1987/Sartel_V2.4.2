@@ -1,0 +1,12 @@
+{
+  "documents": [
+    {
+      "name": "User manual BB Suivo_Extended general",
+      "pdf_path": "config/docs/User manual_Black box Suivo extended_Iss1.pdf"
+    },
+    {
+      "name": "Installation example_GMK6300L-ECOS",
+      "pdf_path": ""
+    }
+  ]
+}

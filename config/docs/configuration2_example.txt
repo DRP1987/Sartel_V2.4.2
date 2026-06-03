@@ -1,0 +1,29 @@
+# Configuration 2 Documentation (Placeholder)
+
+This is a placeholder file for Configuration 2 documentation.
+
+## Overview
+Configuration 2 is designed for J1939 PGN monitoring.
+
+## Signals
+
+### J1939 PGN F004
+- **CAN ID**: 0x18F00401
+- **Match Type**: Range matching
+- **Protocol**: J1939
+- **Byte Index**: 3
+- **Min Value**: 0x06
+- **Max Value**: 0xFF
+
+## J1939 Protocol Details
+J1939 is a higher-layer protocol based on CAN bus, commonly used in heavy-duty vehicles and industrial applications.
+
+### PGN (Parameter Group Number)
+The PGN identifies the message type in J1939 communication. This configuration monitors PGN F004.
+
+## Usage
+This configuration is suitable for J1939-based systems requiring PGN-level monitoring and diagnostics.
+
+---
+
+**Note**: Replace this placeholder text file with an actual PDF document containing detailed configuration documentation. This file is provided as an example only.
