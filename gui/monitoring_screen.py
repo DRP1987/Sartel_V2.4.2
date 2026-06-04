@@ -1183,10 +1183,6 @@ class MonitoringScreen(QWidget):
         # Block signals during batch update for performance
         self.log_table.blockSignals(True)
 
-        # In override mode, anchor to the CAN ID of the top-visible row so that
-        # inserting new rows at the bottom never shifts the user's viewport.
-        anchor_can_id = self._top_visible_can_id() if self.override_mode else None
-
         try:
             # Process each message
             for msg_data in messages_to_add:
@@ -1222,13 +1218,11 @@ class MonitoringScreen(QWidget):
             # Re-enable signals
             self.log_table.blockSignals(False)
 
-        # Restore viewport in override mode so the user's view stays static.
-        # We scroll to the same CAN ID row that was at the top before the update,
-        # which is more robust than restoring a raw pixel value.
+        # In override mode: _update_row() only changes cell content and new rows
+        # are always appended at the bottom - neither operation affects the viewport
+        # position in Qt, so no scroll management is needed here.
         # In append mode, auto-scroll to the latest message.
-        if self.override_mode:
-            self._restore_override_scroll(anchor_can_id)
-        else:
+        if not self.override_mode:
             self.log_table.scrollToBottom()
 
     def _pause_display(self):
