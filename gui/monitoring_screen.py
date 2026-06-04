@@ -634,7 +634,7 @@ class MonitoringScreen(QWidget):
         self.log_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.log_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.log_table.setAlternatingRowColors(True)
-        self.log_table.setStyleSheet("font-family: monospace; font-size: 10px;")
+        self.log_table.setStyleSheet("font-family: monospace; font-size: 12pt;")
         
         # Set column widths
         header = self.log_table.horizontalHeader()
@@ -706,7 +706,11 @@ class MonitoringScreen(QWidget):
         """
         # Block signals for performance
         self.log_table.blockSignals(True)
-        
+
+        if self.override_mode:
+            vbar = self.log_table.verticalScrollBar()
+            saved_scroll = vbar.value()
+
         try:
             # Clear table
             self.log_table.setRowCount(0)
@@ -719,8 +723,9 @@ class MonitoringScreen(QWidget):
         finally:
             self.log_table.blockSignals(False)
         
-        # Auto-scroll to bottom only in append mode
-        if not self.override_mode:
+        if self.override_mode:
+            vbar.setValue(saved_scroll)
+        else:
             self.log_table.scrollToBottom()
 
     def _populate_table_override_mode(self):
@@ -982,14 +987,22 @@ class MonitoringScreen(QWidget):
             message: CAN message object
         """
         can_id = message.arbitration_id
-        current_time = datetime.now()
-        
-        # Calculate cycle time
+
+        # Use the hardware receive timestamp from the CAN message for accurate
+        # cycle time calculation.  python-can sets message.timestamp to the
+        # time the frame was received at the hardware/driver level, so it is
+        # not affected by Python event-loop scheduling delays.
+        try:
+            current_time = datetime.fromtimestamp(message.timestamp)
+        except (AttributeError, OSError, ValueError):
+            current_time = datetime.now()
+
+        # Calculate cycle time (time since last message with the same CAN ID)
         cycle_time = None
         if can_id in self.last_message_time:
             last_time = self.last_message_time[can_id]
             cycle_time = (current_time - last_time).total_seconds() * 1000  # milliseconds
-        
+
         # Update last message time for this CAN ID
         self.last_message_time[can_id] = current_time
         
@@ -1113,7 +1126,14 @@ class MonitoringScreen(QWidget):
         
         # Block signals during batch update for performance
         self.log_table.blockSignals(True)
-        
+
+        # In override mode, keep the user's current scroll position static.
+        # Qt can move the viewport when rows are inserted/updated, so we
+        # capture the position before processing and restore it afterwards.
+        if self.override_mode:
+            vbar = self.log_table.verticalScrollBar()
+            saved_scroll = vbar.value()
+
         try:
             # Process each message
             for msg_data in messages_to_add:
@@ -1148,9 +1168,12 @@ class MonitoringScreen(QWidget):
         finally:
             # Re-enable signals
             self.log_table.blockSignals(False)
-        
-        # Auto-scroll to bottom (smooth, once per batch) - only in append mode
-        if not self.override_mode:
+
+        # Restore scroll position in override mode so the user's view stays static.
+        # In append mode, auto-scroll to the latest message.
+        if self.override_mode:
+            vbar.setValue(saved_scroll)
+        else:
             self.log_table.scrollToBottom()
 
     def _pause_display(self):
@@ -1190,7 +1213,11 @@ class MonitoringScreen(QWidget):
         """
         # Block signals for performance
         self.log_table.blockSignals(True)
-        
+
+        if self.override_mode:
+            vbar = self.log_table.verticalScrollBar()
+            saved_scroll = vbar.value()
+
         try:
             # Clear table
             self.log_table.setRowCount(0)
@@ -1203,7 +1230,9 @@ class MonitoringScreen(QWidget):
         finally:
             self.log_table.blockSignals(False)
         
-        if not self.override_mode:
+        if self.override_mode:
+            vbar.setValue(saved_scroll)
+        else:
             self.log_table.scrollToBottom()
 
     def _start_logging(self):
