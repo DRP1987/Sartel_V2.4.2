@@ -3,8 +3,9 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QTextEdit,
                              QScrollArea, QPushButton, QHBoxLayout, QLabel,
                              QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog,
-                             QSplitter, QCheckBox, QMessageBox, QLineEdit)
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer
+                             QSplitter, QCheckBox, QMessageBox, QLineEdit,
+                             QAbstractItemView)
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QPoint
 from PyQt5.QtGui import QTextCursor
 from datetime import datetime
 from typing import Dict, Any, List, Set, Optional
@@ -61,6 +62,12 @@ class MonitoringScreen(QWidget):
 
         # Track last message time per CAN ID for cycle time calculation
         self.last_message_time: Dict[int, datetime] = {}
+
+        # Smoothed (EMA) cycle time per CAN ID to reduce display jitter
+        self.smoothed_cycle_time: Dict[int, float] = {}
+        # EMA smoothing factor: lower = smoother display, higher = more responsive.
+        # Range 0.0–1.0; 0.2 is a good balance for typical CAN cycle times.
+        self.cycle_time_alpha: float = 0.2
 
         # Pending messages queue for batched GUI updates
         self.pending_display_messages: List[Dict[str, Any]] = []
@@ -634,15 +641,18 @@ class MonitoringScreen(QWidget):
         self.log_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.log_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.log_table.setAlternatingRowColors(True)
-        self.log_table.setStyleSheet("font-family: monospace; font-size: 12pt;")
+        self.log_table.setStyleSheet("font-family: monospace; font-size: 10pt;")
         
-        # Set column widths
+        # Set column widths – all columns are interactively resizable by the user
         header = self.log_table.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # CAN ID
-        header.setSectionResizeMode(1, QHeaderView.Stretch)            # Data
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Timestamp
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Cycle Time
+        header.setSectionResizeMode(0, QHeaderView.Interactive)   # CAN ID
+        header.setSectionResizeMode(1, QHeaderView.Stretch)        # Data  (fills remaining space)
+        header.setSectionResizeMode(2, QHeaderView.Interactive)   # Timestamp
+        header.setSectionResizeMode(3, QHeaderView.Interactive)   # Cycle Time
+        self.log_table.setColumnWidth(0, 80)
+        self.log_table.setColumnWidth(2, 130)
+        self.log_table.setColumnWidth(3, 115)
 
         # Allow clicking CAN ID column header to sort
         header.setSortIndicatorShown(True)
@@ -657,6 +667,43 @@ class MonitoringScreen(QWidget):
         """Setup Qt signal connections."""
         self.pcan_interface.message_received.connect(self._on_message_received)
         self.pcan_interface.error_occurred.connect(self._on_error)
+
+    def _top_visible_can_id(self) -> Optional[int]:
+        """
+        Return the CAN ID of the row currently at the top of the log table viewport.
+
+        Used to anchor the scroll position in override mode before a table update,
+        so the viewport can be restored to the same logical row afterwards.
+
+        Returns:
+            CAN ID integer, or None if the table is empty or the item is unparseable.
+        """
+        top_index = self.log_table.indexAt(QPoint(0, 0))
+        if not top_index.isValid():
+            return None
+        item = self.log_table.item(top_index.row(), 0)
+        if item is None:
+            return None
+        try:
+            return int(item.text(), 16)
+        except (ValueError, TypeError):
+            return None
+
+    def _restore_override_scroll(self, anchor_can_id: Optional[int]) -> None:
+        """
+        Scroll the log table so that *anchor_can_id*'s row is at the top of
+        the viewport (override mode only).
+
+        Does nothing if *anchor_can_id* is None or no longer present in the table.
+
+        Args:
+            anchor_can_id: CAN ID that should appear at the top of the viewport.
+        """
+        if anchor_can_id is not None and anchor_can_id in self.override_row_map:
+            self.log_table.scrollTo(
+                self.log_table.model().index(self.override_row_map[anchor_can_id], 0),
+                QAbstractItemView.PositionAtTop
+            )
 
     def _add_can_id_to_filter(self, can_id: int):
         """Add a new CAN ID to the filter panel."""
@@ -707,8 +754,9 @@ class MonitoringScreen(QWidget):
         # Block signals for performance
         self.log_table.blockSignals(True)
 
-        vbar = self.log_table.verticalScrollBar()
-        saved_scroll = vbar.value() if self.override_mode else None
+        # In override mode, remember which CAN ID was at the top of the viewport
+        # so we can restore the position after the full rebuild.
+        anchor_can_id = self._top_visible_can_id() if self.override_mode else None
 
         try:
             # Clear table
@@ -723,7 +771,7 @@ class MonitoringScreen(QWidget):
             self.log_table.blockSignals(False)
         
         if self.override_mode:
-            vbar.setValue(saved_scroll)
+            self._restore_override_scroll(anchor_can_id)
         else:
             self.log_table.scrollToBottom()
 
@@ -1000,7 +1048,16 @@ class MonitoringScreen(QWidget):
         cycle_time = None
         if can_id in self.last_message_time:
             last_time = self.last_message_time[can_id]
-            cycle_time = (current_time - last_time).total_seconds() * 1000  # milliseconds
+            raw_cycle = (current_time - last_time).total_seconds() * 1000  # ms
+            # Apply exponential moving average to smooth display jitter
+            if can_id in self.smoothed_cycle_time:
+                self.smoothed_cycle_time[can_id] = (
+                    self.cycle_time_alpha * raw_cycle
+                    + (1.0 - self.cycle_time_alpha) * self.smoothed_cycle_time[can_id]
+                )
+            else:
+                self.smoothed_cycle_time[can_id] = raw_cycle
+            cycle_time = self.smoothed_cycle_time[can_id]
 
         # Update last message time for this CAN ID
         self.last_message_time[can_id] = current_time
@@ -1126,11 +1183,9 @@ class MonitoringScreen(QWidget):
         # Block signals during batch update for performance
         self.log_table.blockSignals(True)
 
-        # In override mode, keep the user's current scroll position static.
-        # Qt can move the viewport when rows are inserted/updated, so we
-        # capture the position before processing and restore it afterwards.
-        vbar = self.log_table.verticalScrollBar()
-        saved_scroll = vbar.value() if self.override_mode else None
+        # In override mode, anchor to the CAN ID of the top-visible row so that
+        # inserting new rows at the bottom never shifts the user's viewport.
+        anchor_can_id = self._top_visible_can_id() if self.override_mode else None
 
         try:
             # Process each message
@@ -1167,10 +1222,12 @@ class MonitoringScreen(QWidget):
             # Re-enable signals
             self.log_table.blockSignals(False)
 
-        # Restore scroll position in override mode so the user's view stays static.
+        # Restore viewport in override mode so the user's view stays static.
+        # We scroll to the same CAN ID row that was at the top before the update,
+        # which is more robust than restoring a raw pixel value.
         # In append mode, auto-scroll to the latest message.
         if self.override_mode:
-            vbar.setValue(saved_scroll)
+            self._restore_override_scroll(anchor_can_id)
         else:
             self.log_table.scrollToBottom()
 
@@ -1212,8 +1269,9 @@ class MonitoringScreen(QWidget):
         # Block signals for performance
         self.log_table.blockSignals(True)
 
-        vbar = self.log_table.verticalScrollBar()
-        saved_scroll = vbar.value() if self.override_mode else None
+        # In override mode, anchor to the CAN ID of the top-visible row so that
+        # the full rebuild doesn't reset the user's viewport position.
+        anchor_can_id = self._top_visible_can_id() if self.override_mode else None
 
         try:
             # Clear table
@@ -1228,7 +1286,7 @@ class MonitoringScreen(QWidget):
             self.log_table.blockSignals(False)
         
         if self.override_mode:
-            vbar.setValue(saved_scroll)
+            self._restore_override_scroll(anchor_can_id)
         else:
             self.log_table.scrollToBottom()
 
