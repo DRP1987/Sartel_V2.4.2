@@ -707,9 +707,8 @@ class MonitoringScreen(QWidget):
         # Block signals for performance
         self.log_table.blockSignals(True)
 
-        if self.override_mode:
-            vbar = self.log_table.verticalScrollBar()
-            saved_scroll = vbar.value()
+        vbar = self.log_table.verticalScrollBar()
+        saved_scroll = vbar.value() if self.override_mode else None
 
         try:
             # Clear table
@@ -1130,9 +1129,8 @@ class MonitoringScreen(QWidget):
         # In override mode, keep the user's current scroll position static.
         # Qt can move the viewport when rows are inserted/updated, so we
         # capture the position before processing and restore it afterwards.
-        if self.override_mode:
-            vbar = self.log_table.verticalScrollBar()
-            saved_scroll = vbar.value()
+        vbar = self.log_table.verticalScrollBar()
+        saved_scroll = vbar.value() if self.override_mode else None
 
         try:
             # Process each message
@@ -1214,9 +1212,8 @@ class MonitoringScreen(QWidget):
         # Block signals for performance
         self.log_table.blockSignals(True)
 
-        if self.override_mode:
-            vbar = self.log_table.verticalScrollBar()
-            saved_scroll = vbar.value()
+        vbar = self.log_table.verticalScrollBar()
+        saved_scroll = vbar.value() if self.override_mode else None
 
         try:
             # Clear table
