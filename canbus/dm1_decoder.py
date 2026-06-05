@@ -1,6 +1,6 @@
 """DM1 (Active Diagnostic Trouble Codes) decoder for J1939 CAN bus."""
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 # J1939 PGN for DM1 — Active Diagnostic Trouble Codes
 DM1_PGN = 0xFECA
@@ -48,7 +48,7 @@ FMI_DESCRIPTIONS: Dict[int, str] = {
 # Add new entries here by following the same pattern.  Any SPN/FMI pair that
 # is not listed will automatically be displayed as "Unknown".
 # ---------------------------------------------------------------------------
-SPN_FMI_DESCRIPTIONS: Dict[tuple, str] = {
+SPN_FMI_DESCRIPTIONS: Dict[Tuple[int, int], str] = {
     # ── Example entries – replace / extend these with your actual fault codes ──
 
     # SPN 100 – Engine Oil Pressure
