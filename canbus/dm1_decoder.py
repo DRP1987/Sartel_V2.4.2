@@ -1,6 +1,6 @@
 """DM1 (Active Diagnostic Trouble Codes) decoder for J1939 CAN bus."""
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 # J1939 PGN for DM1 — Active Diagnostic Trouble Codes
 DM1_PGN = 0xFECA
@@ -37,6 +37,47 @@ FMI_DESCRIPTIONS: Dict[int, str] = {
     19: "Received network data in error",
     31: "Condition exists",
 }
+
+
+# ---------------------------------------------------------------------------
+# SPN + FMI → human-readable error description lookup table.
+#
+# Key   : (spn: int, fmi: int)
+# Value : str  — short error description shown to the operator
+#
+# Add new entries here by following the same pattern.  Any SPN/FMI pair that
+# is not listed will automatically be displayed as "Unknown".
+# ---------------------------------------------------------------------------
+SPN_FMI_DESCRIPTIONS: Dict[Tuple[int, int], str] = {
+    # ── Example entries – replace / extend these with your actual fault codes ──
+
+    # SPN 100 – Engine Oil Pressure
+    (100, 1): "Engine oil pressure too low",
+    (100, 3): "Engine oil pressure sensor voltage high",
+    (100, 4): "Engine oil pressure sensor voltage low",
+
+    # SPN 110 – Engine Coolant Temperature
+    (110, 0): "Engine coolant temperature above normal range",
+    (110, 3): "Engine coolant temperature sensor voltage high",
+    (110, 4): "Engine coolant temperature sensor voltage low",
+
+    # SPN 190 – Engine Speed
+    (190, 0): "Engine speed above normal operating range",
+    (190, 8): "Engine speed signal abnormal frequency",
+
+    # SPN 91 – Accelerator Pedal Position
+    (91, 2):  "Accelerator pedal signal erratic or intermittent",
+    (91, 3):  "Accelerator pedal sensor voltage high",
+    (91, 4):  "Accelerator pedal sensor voltage low",
+
+    # SPN 1569 – Engine Protection Torque Derate
+    (1569, 31): "Engine protection derate active – condition exists",
+}
+
+
+def get_dtc_description(spn: int, fmi: int) -> str:
+    """Return the error description for a given SPN/FMI pair, or 'Unknown'."""
+    return SPN_FMI_DESCRIPTIONS.get((spn, fmi), "Unknown")
 
 
 def _lamp_status(byte: int, shift: int) -> str:
@@ -100,9 +141,10 @@ def decode_dm1(data: List[int]) -> Dict[str, Any]:
         spn = spn_byte0 | (spn_byte1 << 8) | ((fmi_byte >> 5) << 16)
         fmi = fmi_byte & 0x1F
         result['dtcs'].append({
-            'spn':      spn,
-            'fmi':      fmi,
-            'fmi_desc': FMI_DESCRIPTIONS.get(fmi, f'FMI {fmi}'),
+            'spn':        spn,
+            'fmi':        fmi,
+            'fmi_desc':   FMI_DESCRIPTIONS.get(fmi, f'FMI {fmi}'),
+            'error_desc': get_dtc_description(spn, fmi),
         })
         idx += 3  # advance past first DTC
 
@@ -115,9 +157,10 @@ def decode_dm1(data: List[int]) -> Dict[str, Any]:
         spn = spn_byte0 | (spn_byte1 << 8) | ((fmi_byte >> 5) << 16)
         fmi = fmi_byte & 0x1F
         result['dtcs'].append({
-            'spn':      spn,
-            'fmi':      fmi,
-            'fmi_desc': FMI_DESCRIPTIONS.get(fmi, f'FMI {fmi}'),
+            'spn':        spn,
+            'fmi':        fmi,
+            'fmi_desc':   FMI_DESCRIPTIONS.get(fmi, f'FMI {fmi}'),
+            'error_desc': get_dtc_description(spn, fmi),
         })
         idx += 5
 

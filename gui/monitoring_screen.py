@@ -481,8 +481,8 @@ class MonitoringScreen(QWidget):
         outer_layout.addWidget(dtc_label)
 
         self.dm1_dtc_table = QTableWidget()
-        self.dm1_dtc_table.setColumnCount(4)
-        self.dm1_dtc_table.setHorizontalHeaderLabels(['Source (SA)', 'SPN', 'FMI', 'FMI Description'])
+        self.dm1_dtc_table.setColumnCount(5)
+        self.dm1_dtc_table.setHorizontalHeaderLabels(['Source (SA)', 'SPN', 'FMI', 'FMI Description', 'Error Description'])
         self.dm1_dtc_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.dm1_dtc_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.dm1_dtc_table.setAlternatingRowColors(True)
@@ -492,7 +492,8 @@ class MonitoringScreen(QWidget):
         hdr.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # Source
         hdr.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # SPN
         hdr.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # FMI
-        hdr.setSectionResizeMode(3, QHeaderView.Stretch)           # Description
+        hdr.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # FMI Description
+        hdr.setSectionResizeMode(4, QHeaderView.Stretch)           # Error Description
 
         outer_layout.addWidget(self.dm1_dtc_table)
 
@@ -579,6 +580,7 @@ class MonitoringScreen(QWidget):
                 self.dm1_dtc_table.setItem(row, 1, QTableWidgetItem(str(dtc['spn'])))
                 self.dm1_dtc_table.setItem(row, 2, QTableWidgetItem(str(dtc['fmi'])))
                 self.dm1_dtc_table.setItem(row, 3, QTableWidgetItem(dtc['fmi_desc']))
+                self.dm1_dtc_table.setItem(row, 4, QTableWidgetItem(dtc.get('error_desc', 'Unknown')))
 
 
     def _create_filter_panel(self) -> QWidget:
