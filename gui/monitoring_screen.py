@@ -544,15 +544,23 @@ class MonitoringScreen(QWidget):
 
     def _request_fuel_consumption(self) -> None:
         """Send J1939 PGN request messages for Total Fuel Consumption (PGN 0xFEE9 and 0xFD09)."""
-        # CAN ID 0x18EA0000 — J1939 Request PGN (PGN 0xEA00), priority 6, dest 0x00, src 0x00
+        # CAN ID 0x18EA0000 -- J1939 Request PGN (PGN 0xEA00), priority 6, dest 0x00, src 0x00
         request_can_id = 0x18EA0000
-        self.pcan_interface.send_message(request_can_id, [0xE9, 0xFE, 0x00], is_extended_id=True)
-        self.pcan_interface.send_message(request_can_id, [0x09, 0xFD, 0x00], is_extended_id=True)
+        ok1 = self.pcan_interface.send_message(request_can_id, [0xE9, 0xFE, 0x00], is_extended_id=True)
+        ok2 = self.pcan_interface.send_message(request_can_id, [0x09, 0xFD, 0x00], is_extended_id=True)
+        if not (ok1 and ok2):
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Request Failed",
+                                "Could not send fuel consumption request. Check CAN bus connection.")
 
     def _request_engine_hours(self) -> None:
         """Send J1939 PGN request message for Total Engine Hours (PGN 0xFEE5)."""
         request_can_id = 0x18EA0000
-        self.pcan_interface.send_message(request_can_id, [0xE5, 0xFE, 0x00], is_extended_id=True)
+        ok = self.pcan_interface.send_message(request_can_id, [0xE5, 0xFE, 0x00], is_extended_id=True)
+        if not ok:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Request Failed",
+                                "Could not send engine hours request. Check CAN bus connection.")
 
     def _rebuild_dm1_display(self) -> None:
         """
