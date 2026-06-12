@@ -326,7 +326,7 @@ class MonitoringScreen(QWidget):
         Returns:
             Live data tab widget
         """
-        from PyQt5.QtWidgets import QFrame, QGridLayout
+        from PyQt5.QtWidgets import QFrame, QGridLayout, QPushButton, QHBoxLayout
 
         tab = QWidget()
         outer_layout = QVBoxLayout()
@@ -379,6 +379,38 @@ class MonitoringScreen(QWidget):
         grid_container.setLayout(grid_layout)
         scroll_area.setWidget(grid_container)
         outer_layout.addWidget(scroll_area)
+
+        # --- Request buttons panel ---
+        request_label = QLabel("Request data (use if values are not broadcast on the bus):")
+        request_label.setAlignment(Qt.AlignCenter)
+        request_label.setStyleSheet("color: #495057; font-size: 9pt; padding-top: 6px;")
+        outer_layout.addWidget(request_label)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(12)
+        btn_layout.setContentsMargins(12, 0, 12, 4)
+
+        fuel_btn = QPushButton("⛽ Request Total Fuel Consumption")
+        fuel_btn.setStyleSheet(
+            "QPushButton { background-color: #0d6efd; color: white; border-radius: 6px; "
+            "padding: 6px 16px; font-size: 10pt; }"
+            "QPushButton:hover { background-color: #0b5ed7; }"
+            "QPushButton:pressed { background-color: #0a58ca; }"
+        )
+        fuel_btn.clicked.connect(self._request_fuel_consumption)
+        btn_layout.addWidget(fuel_btn)
+
+        hours_btn = QPushButton("🕐 Request Total Engine Hours")
+        hours_btn.setStyleSheet(
+            "QPushButton { background-color: #198754; color: white; border-radius: 6px; "
+            "padding: 6px 16px; font-size: 10pt; }"
+            "QPushButton:hover { background-color: #157347; }"
+            "QPushButton:pressed { background-color: #146c43; }"
+        )
+        hours_btn.clicked.connect(self._request_engine_hours)
+        btn_layout.addWidget(hours_btn)
+
+        outer_layout.addLayout(btn_layout)
 
         # Footer note
         if self.connected:
@@ -509,6 +541,18 @@ class MonitoringScreen(QWidget):
 
         tab.setLayout(outer_layout)
         return tab
+
+    def _request_fuel_consumption(self) -> None:
+        """Send J1939 PGN request messages for Total Fuel Consumption (PGN 0xFEE9 and 0xFD09)."""
+        # CAN ID 0x18EA0000 — J1939 Request PGN (PGN 0xEA00), priority 6, dest 0x00, src 0x00
+        request_can_id = 0x18EA0000
+        self.pcan_interface.send_message(request_can_id, [0xE9, 0xFE, 0x00], is_extended_id=True)
+        self.pcan_interface.send_message(request_can_id, [0x09, 0xFD, 0x00], is_extended_id=True)
+
+    def _request_engine_hours(self) -> None:
+        """Send J1939 PGN request message for Total Engine Hours (PGN 0xFEE5)."""
+        request_can_id = 0x18EA0000
+        self.pcan_interface.send_message(request_can_id, [0xE5, 0xFE, 0x00], is_extended_id=True)
 
     def _rebuild_dm1_display(self) -> None:
         """
@@ -1138,7 +1182,17 @@ class MonitoringScreen(QWidget):
             received_pgn = (message.arbitration_id >> 8) & 0x3FFFF
             if received_pgn == DM1_PGN:
                 source_addr = message.arbitration_id & 0xFF
-                dm1_data = decode_dm1(list(message.data))
+                data_bytes = list(message.data)
+                # Ignore "no fault" FECA frames: byte0=0xFF, byte1=0xFF, bytes2-5=0x00
+                if (len(data_bytes) >= 6
+                        and data_bytes[0] == 0xFF
+                        and data_bytes[1] == 0xFF
+                        and data_bytes[2] == 0x00
+                        and data_bytes[3] == 0x00
+                        and data_bytes[4] == 0x00
+                        and data_bytes[5] == 0x00):
+                    return
+                dm1_data = decode_dm1(data_bytes)
                 self.dm1_data_by_source[source_addr] = dm1_data
                 self._rebuild_dm1_display()
 
