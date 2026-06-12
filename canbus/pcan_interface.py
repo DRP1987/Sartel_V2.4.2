@@ -170,13 +170,14 @@ class PCANInterface(QObject):
                     self.error_occurred.emit(f"Error receiving message: {str(e)}")
                     time.sleep(0.1)
 
-    def send_message(self, can_id: int, data: List[int]) -> bool:
+    def send_message(self, can_id: int, data: List[int], is_extended_id: bool = False) -> bool:
         """
         Send a CAN message.
 
         Args:
             can_id: CAN message ID
             data: CAN message data bytes (up to 8 bytes)
+            is_extended_id: True for 29-bit extended CAN ID (e.g. J1939), False for 11-bit standard
 
         Returns:
             True if sent successfully, False otherwise
@@ -189,7 +190,7 @@ class PCANInterface(QObject):
             message = can.Message(
                 arbitration_id=can_id,
                 data=data,
-                is_extended_id=False
+                is_extended_id=is_extended_id
             )
             self.bus.send(message)
             return True
