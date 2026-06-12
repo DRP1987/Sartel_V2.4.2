@@ -154,7 +154,7 @@
           "format": "{:.2f}"
         }
       ],
-      "dm1_enable": true 
+      "dm1_enabled": true
     },
     {
       "name": "Demag_2012_Std J1939(Double engine crane_Engine 1 status)",
@@ -272,7 +272,7 @@
           "format": "{:.2f}"
         }
       ],
-      "dm1_enable": true  
+      "dm1_enabled": true
     },
     {
       "name": "Equipment<2014(Double engine crane_Engine 1 status)",

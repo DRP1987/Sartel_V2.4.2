@@ -9,7 +9,7 @@ from utils.resource_path import resource_path
 class ConfigurationLoader:
     """Loads and manages CAN bus monitoring configurations from JSON files."""
 
-    def __init__(self, config_file: str = "configurations.json"):
+    def __init__(self, config_file: str = "config/configurations.json"):
         """
         Initialize the configuration loader.
 
